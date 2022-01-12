@@ -69,6 +69,12 @@ error_code no_of_lines(FILE *fp) {
             lines++;
         }
         ch = getc(fp);
+
+        // When we reach the end of file, it counts a new line too.
+        // No need to consider empty file, as the while loop won't even be executed
+        if(ch == EOF){
+            lines++;
+        }
     }
 
     // Move cursor back to the original position
@@ -129,9 +135,9 @@ int main() {
     errno = 0;
     FILE *test_file = fopen("../five_lines", "r");
 
-    printf("%c\n",(char) fgetc(test_file));
+    //printf("%c\n",(char) fgetc(test_file));
     printf("%d\n", no_of_lines(test_file));
-    printf("%c\n", (char) fgetc(test_file));
+   // printf("%c\n", (char) fgetc(test_file));
     fclose(test_file);
 
 
