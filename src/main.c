@@ -55,12 +55,14 @@ error_code strlen2(char *s) {
  * @return le nombre de lignes, ou -1 si une erreur s'est produite
  */
 error_code no_of_lines(FILE *fp) {
-    long cursor = ftell(fp); // Locate the current file cursor
 
     if (fp == NULL){
         printf("Error: %d\n",errno);
         return -1;
     }
+
+    long cursor = ftell(fp); // Locate the current file cursor, memorize it
+    fseek(fp, 0, SEEK_SET); // Move cursor back to the start, to count all lines
 
     int ch = getc(fp);
     int lines = 0;
@@ -90,8 +92,33 @@ error_code no_of_lines(FILE *fp) {
  * @param max_len la longueur maximale de la ligne à lire
  * @return le nombre de caractère ou ERROR si une erreur est survenue
  */
+
 error_code readline(FILE *fp, char **out, size_t max_len) {
-    return ERROR;
+
+    // Because
+    char *output = malloc(max_len+1);
+
+    if (fp == NULL || output == NULL){
+        return ERROR;
+    } else{
+        int current = fgetc(fp);
+        char c = (char) current;
+        int index = 0;
+
+        while(current != EOF && current != '\n' && index < ((int) max_len)+2){
+            c = (char) current;
+            if(current != '\0') {
+                output[index] = (char) current;
+                index++;
+            }
+            current = fgetc(fp);
+        }
+
+        *out = output;
+
+        return index;
+    }
+
 }
 
 /**
@@ -133,13 +160,20 @@ int main() {
 // ous pouvez ajouter des tests pour les fonctions ici
 
     errno = 0;
+
+    char **read = malloc(sizeof(char *));
+
     FILE *test_file = fopen("../five_lines", "r");
+    printf("%d\n",readline(test_file, read, 1024));
 
-    //printf("%c\n",(char) fgetc(test_file));
-    printf("%d\n", no_of_lines(test_file));
-   // printf("%c\n", (char) fgetc(test_file));
+
+    printf("%s\n",*read);
+    free(*read);
+    printf("%d\n",readline(test_file, read, 1024));
+    printf("%s\n",*read);
+    free(*read);
+    free(read);
     fclose(test_file);
-
 
     return 0;
 }

@@ -56,6 +56,7 @@ DEFINE_TEST(test_readline_1) {
 
     ck_assert_str_eq(line, "line one");
     free(*read);
+
     free(read);
     fclose(test_file);
 } END_TEST
