@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "main.h"
+#include "errno.h"
 
 
 typedef unsigned char byte;
@@ -54,7 +55,10 @@ error_code strlen2(char *s) {
  * @return le nombre de lignes, ou -1 si une erreur s'est produite
  */
 error_code no_of_lines(FILE *fp) {
+    long cursor = ftell(fp); // Locate the current file cursor
+
     if (fp == NULL){
+        printf("Error: %d\n",errno);
         return -1;
     }
 
@@ -65,7 +69,18 @@ error_code no_of_lines(FILE *fp) {
             lines++;
         }
         ch = getc(fp);
+
+        // When we reach the end of file, it counts a new line too.
+        // No need to consider empty file, as the while loop won't even be executed
+        if(ch == EOF){
+            lines++;
+        }
     }
+
+    // Move cursor back to the original position
+    fseek(fp, cursor, SEEK_SET);
+
+    return lines;
 }
 
 /**
@@ -117,7 +132,15 @@ error_code execute(char *machine_file, char *input) {
 int main() {
 // ous pouvez ajouter des tests pour les fonctions ici
 
-    printf("%d\n",strlen2("aaaa"));
+    errno = 0;
+    FILE *test_file = fopen("../five_lines", "r");
+
+    //printf("%c\n",(char) fgetc(test_file));
+    printf("%d\n", no_of_lines(test_file));
+   // printf("%c\n", (char) fgetc(test_file));
+    fclose(test_file);
+
+
     return 0;
 }
 
