@@ -40,7 +40,12 @@ int strcmp(char *p1, char *p2) {
  * si l'entrée est incorrecte
  */
 error_code strlen2(char *s) {
-    return ERROR;
+    char *temp = s;
+    int i=0;
+    while(temp[i] != '\n'){
+        i++;
+    }
+    return i;
 }
 
 /**
