@@ -41,7 +41,7 @@ int strcmp(char *p1, char *p2) {
  */
 error_code strlen2(char *s) {
     int i=0;
-    while(s[i] != '\n'){
+    while(s[i] != '\0'){
         i++;
     }
     return i;
@@ -117,6 +117,7 @@ error_code execute(char *machine_file, char *input) {
 int main() {
 // ous pouvez ajouter des tests pour les fonctions ici
 
+    printf("%d\n",strlen2("aaaa"));
     return 0;
 }
 
