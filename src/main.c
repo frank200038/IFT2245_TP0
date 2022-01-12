@@ -40,9 +40,8 @@ int strcmp(char *p1, char *p2) {
  * si l'entrée est incorrecte
  */
 error_code strlen2(char *s) {
-    char *temp = s;
     int i=0;
-    while(temp[i] != '\n'){
+    while(s[i] != '\n'){
         i++;
     }
     return i;
@@ -55,7 +54,18 @@ error_code strlen2(char *s) {
  * @return le nombre de lignes, ou -1 si une erreur s'est produite
  */
 error_code no_of_lines(FILE *fp) {
-    return ERROR;
+    if (fp == NULL){
+        return -1;
+    }
+
+    int ch = getc(fp);
+    int lines = 0;
+    while(ch != EOF){
+        if((char) ch == '\n'){
+            lines++;
+        }
+        ch = getc(fp);
+    }
 }
 
 /**
