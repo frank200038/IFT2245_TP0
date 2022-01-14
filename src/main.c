@@ -41,10 +41,14 @@ int strcmp(char *p1, char *p2) {
  * si l'entrée est incorrecte
  */
 error_code strlen2(char *s) {
+    if (s == NULL){
+      return ERROR;
+    }
     int i=0;
     while(s[i] != '\0'){
         i++;
     }
+
     return i;
 }
 
@@ -62,6 +66,10 @@ error_code no_of_lines(FILE *fp) {
     }
 
     long cursor = ftell(fp); // Locate the current file cursor, memorize it
+    //if errors occur
+    if (cursor = ftell(fp)< 0){
+      return -1;
+    }
     fseek(fp, 0, SEEK_SET); // Move cursor back to the start, to count all lines
 
     int ch = getc(fp);
@@ -95,29 +103,28 @@ error_code no_of_lines(FILE *fp) {
 
 error_code readline(FILE *fp, char **out, size_t max_len) {
 
-    // Because
     char *output = malloc(max_len+1);
 
     if (fp == NULL || output == NULL){
         return ERROR;
-    } else{
-        int current = fgetc(fp);
-        char c = (char) current;
-        int index = 0;
-
-        while(current != EOF && current != '\n' && index < ((int) max_len)+2){
-            c = (char) current;
-            if(current != '\0') {
-                output[index] = (char) current;
-                index++;
-            }
-            current = fgetc(fp);
-        }
-
-        *out = output;
-
-        return index;
     }
+    int current = fgetc(fp);
+    char c = (char) current;
+    int index = 0;
+
+    while(current != EOF && current != '\n' && index < max_len+2){
+        c = (char) current;
+        if(current != '\0') {
+            output[index] = (char) current;
+            index++;
+        }
+        current = fgetc(fp);
+    }
+
+    *out = output;
+
+    return index;
+
 
 }
 
