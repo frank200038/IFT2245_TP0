@@ -102,22 +102,6 @@ error_code no_of_lines(FILE *fp) {
 
 error_code readline(FILE *fp, char **out, size_t max_len) {
 
-<<<<<<< HEAD
-    char *output = malloc(max_len+1);
-
-    if (fp == NULL || output == NULL){
-        return ERROR;
-    }
-    int current = fgetc(fp);
-    char c = (char) current;
-    int index = 0;
-
-    while(current != EOF && current != '\n' && index < (int)max_len+2){
-        c = (char) current;
-        if(current != '\0') {
-            output[index] = (char) current;
-            index++;
-=======
     // Because our goal is to eventually transfer the char* (string) to another pointer.
     // So we would need to add the null character add the end so we can mark the end of the char* (string)
     // Also if we need to have absolutely maximum max_len character in the string, we need to allocate max_len + 1
@@ -144,17 +128,10 @@ error_code readline(FILE *fp, char **out, size_t max_len) {
             index++;
 
             current = fgetc(fp);
->>>>>>> d48a8a817db0d78f510b53ebcf9c04fa1a86aacc
         }
         current = fgetc(fp);
     }
 
-<<<<<<< HEAD
-    *out = output;
-
-    return index;
-
-=======
         // Add null character at the end to mark the end of string, as we need to transfer it to another pointer
         output[index] = '\0';
 
@@ -162,7 +139,6 @@ error_code readline(FILE *fp, char **out, size_t max_len) {
 
         return length;
     }
->>>>>>> d48a8a817db0d78f510b53ebcf9c04fa1a86aacc
 
 }
 
