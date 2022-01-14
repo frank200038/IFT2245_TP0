@@ -112,7 +112,7 @@ error_code readline(FILE *fp, char **out, size_t max_len) {
     char c = (char) current;
     int index = 0;
 
-    while(current != EOF && current != '\n' && index < max_len+2){
+    while(current != EOF && current != '\n' && index < (int)max_len+2){
         c = (char) current;
         if(current != '\0') {
             output[index] = (char) current;
