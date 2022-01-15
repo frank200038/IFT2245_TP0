@@ -41,6 +41,10 @@ int strcmp(char *p1, char *p2) {
  * si l'entrée est incorrecte
  */
 error_code strlen2(char *s) {
+  if (s == NULL){
+      return ERROR;
+  }
+
   int i=0;
   while(s[i] != '\0'){
     i++;
@@ -193,12 +197,12 @@ transition *parse_line(char *line, size_t len) {
   int current = 0;
 
   // Extract Current State
-  while(i < (int) len && lineParse[i] != ','){ // why cast to int? i < len not necessary?
+  while(i < len && lineParse[i] != ','){
     currentState[current] = lineParse[i];
     i++;
     current++;
   }
-//  currentState[current] = "\0";
+
 
   i++;
   current = 0;
@@ -209,19 +213,19 @@ transition *parse_line(char *line, size_t len) {
   i+=5; // skip ")->(" to start of next state symbol
 
   //Extract Next State
-  while(i < (int) len && lineParse[i] != ','){ // same, why cast and biyao?/
+  while(i < len && lineParse[i] != ','){
     nextState[current] = lineParse[i];
     i++;
     current++;
   }
-//  nextState[current] = "\0";
+
 
   i++;
 
   t->next_state = nextState;
   t->write = lineParse[i];
 
-  i+=2; // skip "," and why -1 0 1 lol
+  i+=2; // skip ","
   switch (lineParse[i]) {
     case 'G': t->movement = -1; break;
     case 'R': t->movement = 0; break;
@@ -230,12 +234,10 @@ transition *parse_line(char *line, size_t len) {
 
   free(lineParse);
 
-
   return t;
-
-
 }
 
+// Auxiliary function to free the array of transitions
 void freeStates(transition trans[] , int limit){
   if (limit < 5){
     return;
@@ -254,7 +256,6 @@ void freeStates(transition trans[] , int limit){
  */
 error_code execute(char *machine_file, char *input) {
   FILE *file = fopen(machine_file, "r");
-  // file free? assigned by malloc or...?
   if(file == NULL) return ERROR;
 
   // do not have to check nolines <0 because
@@ -272,16 +273,18 @@ error_code execute(char *machine_file, char *input) {
     }
 
     int len = readline(file, line, 1024);
-    // check if len <0. len < 0 means that sth goes wrong
-    // in function readline (may be other reason than file == NULL)
     char *linePtr = *line;
     free(line);
+
+    // check if len <0. len < 0 means that sth goes wrong
+    // in function readline
     if (len < 0){
       free(file);
       free(linePtr);
       freeStates(transitions,i);
       return  ERROR;
     }
+
     switch (i) {
       case 0: initial = linePtr;
          break;
@@ -295,12 +298,10 @@ error_code execute(char *machine_file, char *input) {
         // t is never freed
         if(t == NULL){
           free(file);
-          // free t?(don't need I think)
           freeStates(transitions,i);
           return ERROR;
         } else{
           transitions[i-3] = *t;
-          // free t immediately
           free(t);
         }
       }
@@ -312,20 +313,27 @@ error_code execute(char *machine_file, char *input) {
   int expand = 2;
 
   // Initiate turing machine tape
-  // meidong haha
+
+  // If the input is 0, choose the noLines as the size to allocate to the tape
+  // Can't allocate 0 size. (Inspired by the "test_execute_2" which has an input an empty string)
   int inputSize = strlen2(input) == 0 ? noLines : strlen2(input) ;
-  char *tape = malloc(inputSize * expand);
+  char *tape = malloc(inputSize * expand + 1); // Allocate one extra space to accomodate '\0'
   if (tape == NULL){
     free(file);
     free(initial);
     freeStates(transitions,noLines);
-//    free(accept);
-//    free(reject);
+    free(accept);
+    free(reject);
     return ERROR;
   }
 
-  for(int i = 0; i < inputSize * expand; i++){
-    tape[i] = ' ';
+  // Initialize the string with all space, with exception of the null character at the end
+  for(int i = 0; i < inputSize * expand + 1; i++){
+    if (i == inputSize * expand){
+        tape[i] = '\0';
+    } else{
+        tape[i] = ' ';
+    }
   }
 
   memcpy2(tape, input, strlen2(input));
@@ -345,12 +353,13 @@ error_code execute(char *machine_file, char *input) {
         tape[j] = currentT.write;
         switch (currentT.movement) {
           case -1: {
-            //bujidezainalixieguole 233
+
+            // Can't move left when we are at the beginning. Means something is wrong.
             if (j == 0) {
               free(file);
               free(initial);
-//              free(accept);
-//              free(reject);
+              free(accept);
+              free(reject);
               free(tape);
               freeStates(transitions,noLines);
               return ERROR;
@@ -363,34 +372,38 @@ error_code execute(char *machine_file, char *input) {
         }
 
         if(strcmp(accept, current) == 0){
-          // free?
           freeStates(transitions,noLines);
           return 1;
         } else if (strcmp(reject, current) == 0){
-          //free?
           freeStates(transitions,noLines);
           return 0;
         }
       }
 
-      if(j > inputSize * expand){
-        char *newTape = realloc(tape, inputSize * expand * 2);
+      // If the tape is not long enough, start to reallocate
+      if(j >= inputSize * expand){
+        char *newTape = realloc(tape, inputSize * expand * 2 + 1);
         expand *= 2;
         if(newTape == NULL){
-          free(tape);  // not necessary! because newtape = tape
+          free(tape);
           free(initial);
-//          free(accept);
-//          free(reject);
-          // more free may be needed
+          free(accept);
+          free(reject);
           freeStates(transitions,noLines);
           return ERROR;
         }
 
-        for(int index = inputSize * expand / 2; i < inputSize * expand; i++){
-          newTape[index] = ' ';
-        }
-
         tape = newTape;
+        newTape = NULL;
+
+        // Initialize the new allocated part of the string with space, and add the null character at the end
+        for(int index = inputSize * expand / 2; index < inputSize * expand + 1; index++){
+          if(index == inputSize * expand){
+              tape[index] = '\0';
+          } else {
+              tape[index] = ' ';
+          }
+        }
       }
       if(found) break;
     }
@@ -400,7 +413,6 @@ error_code execute(char *machine_file, char *input) {
       free(initial);
       free(accept);
       free(reject);
-      //more free may be needed
       freeStates(transitions,noLines);
       return ERROR;
     }
@@ -408,14 +420,6 @@ error_code execute(char *machine_file, char *input) {
 
 }
 
-//243  file pointer
-//256  line
-//263  *line
-//266-268 initial, accept, reject
-//270  t
-//290  tape
-//346  new Tape 是否可以写成 char * tap = realloc(tape,inputSize....)
-//360  newTape?
 
 
 
@@ -428,36 +432,13 @@ int main() {
 
   errno = 0;
 
-//    char **read = malloc(sizeof(char *));
-//
-//    FILE *test_file = fopen("../five_lines", "r");
-//    readline(test_file, read, 1024);
-//
-//    char *line = *read;
-//
-//    printf("%s\n",line);
-//    free(*read);
-//
-//    free(read);
-//    fclose(test_file);
-  printf("%d\n",execute("../youre_gonna_go_far_kid", "STARING AT THE SUN"));
+  printf("%d\n",execute("../youre_gonna_go_far_kid", "STARING AT THE SUN")); // -1
+  printf("%d\n",execute("../this_file_dne", "101010")); // -1
+  printf("%d\n",execute("../youre_gonna_go_far_kid", "")); // 1
+  printf("%d\n",execute("../has_five_ones", "0000")); // 0
+  printf("%d\n",execute("../has_five_ones", "101010101")); // 1
+  printf("%d\n",execute("../has_five_ones", "111111111")); // 1
+  //printf("%d\n",execute("../has_five_ones", "1111"));
   return 0;
 }
-//    printf("%s\n",initial);
-//    printf("%s\n",accept);
-//    printf("%s\n",reject);
-//
-//
-//    for(int k = 0; k < noLines-3;k++){
-//        transition t = transitions[k];
-//        printf("Transition %d is: \n", k);
-//        printf("current: %s\n", t.current_state);
-//        printf("next: %s\n", t.next_state);
-//        printf("movement: %c\n", t.movement);
-//        printf("read: %c\n", t.read);
-//        printf("write: %c\n", t.write);
-//        printf("------------------------\n");
-//
-//    }
-
 // ༽つ۞﹏۞༼つ
