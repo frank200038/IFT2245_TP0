@@ -178,8 +178,8 @@ transition *parse_line(char *line, size_t len) {
     i++;
   }
 
-  char *currentState = malloc(6);
-  char *nextState = malloc(6);
+  char *currentState = malloc(5);
+  char *nextState = malloc(5);
 
   if (currentState == NULL || nextState == NULL){
     free(t);
@@ -198,7 +198,7 @@ transition *parse_line(char *line, size_t len) {
     i++;
     current++;
   }
-  currentState[current] = "\0";
+//  currentState[current] = "\0";
 
   i++;
   current = 0;
@@ -214,7 +214,7 @@ transition *parse_line(char *line, size_t len) {
     i++;
     current++;
   }
-  nextState[current] = "\0";
+//  nextState[current] = "\0";
 
   i++;
 
