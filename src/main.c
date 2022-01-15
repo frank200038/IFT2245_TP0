@@ -264,8 +264,6 @@ error_code execute(char *machine_file, char *input) {
   transition transitions[noLines-3];
   char *initial, *accept, *reject;
   for(int i = 0; i< noLines; i++){
-    // n it is never freed!!!!!
-    // free *line!
     char **line = malloc(sizeof (char *));
     if (line == NULL){
       free(file);
