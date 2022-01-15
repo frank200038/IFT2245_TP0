@@ -189,11 +189,11 @@ transition *parse_line(char *line, size_t len) {
     return NULL;
   }
 
-  i=1;
+  i=1; // initial value of i is 1 because we ignore the "("
   int current = 0;
 
   // Extract Current State
-  while(i < (int) len && lineParse[i] != ','){
+  while(i < (int) len && lineParse[i] != ','){ // why cast to int? i < len not necessary?
     currentState[current] = lineParse[i];
     i++;
     current++;
@@ -205,10 +205,10 @@ transition *parse_line(char *line, size_t len) {
   t->current_state = currentState;
   t->read = lineParse[i];
 
-  i+=5; // Start of next state symbol
+  i+=5; // skip ")->(" to start of next state symbol
 
   //Extract Next State
-  while(i < (int) len && lineParse[i] != ','){
+  while(i < (int) len && lineParse[i] != ','){ // same, why cast and biyao?/
     nextState[current] = lineParse[i];
     i++;
     current++;
@@ -219,7 +219,7 @@ transition *parse_line(char *line, size_t len) {
   t->next_state = nextState;
   t->write = lineParse[i];
 
-  i+=2;
+  i+=2; // skip "," and why -1 0 1 lol
   switch (lineParse[i]) {
     case 'G': t->movement = -1; break;
     case 'R': t->movement = 0; break;
@@ -241,13 +241,18 @@ transition *parse_line(char *line, size_t len) {
  */
 error_code execute(char *machine_file, char *input) {
   FILE *file = fopen(machine_file, "r");
+  // file free? assigned by malloc or...?
   if(file == NULL) return ERROR;
 
+  // do not have to check nolines <0 because
+  // it <0 iff file == NULL which we have already checked...
   int noLines = no_of_lines(file);
 
   transition transitions[noLines-3];
   char *initial, *accept, *reject;
   for(int i = 0; i< noLines; i++){
+    // necessary ? in addition it is never freed!!!!!
+    // free *line!
     char **line = malloc(sizeof (char *));
     if (line == NULL){
       free(line);
@@ -256,15 +261,18 @@ error_code execute(char *machine_file, char *input) {
     }
 
     int len = readline(file, line, 1024);
+    // check if len <0 !!!!!!!!!!!!!!!
     switch (i) {
       case 0: initial = *line; break;
       case 1: accept = *line; break;
       case 2: reject = *line; break;
       default: {
         transition *t = parse_line(*line, len);
+        // t is never freed
         if(t == NULL){
-          free(line);
+          free(line); //*line?
           free(file);
+          // free t?
           return ERROR;
         } else{
           transitions[i-3] = *t;
@@ -278,13 +286,15 @@ error_code execute(char *machine_file, char *input) {
   int expand = 2;
 
   // Initiate turing machine tape
+  // meidong haha
   int inputSize = strlen2(input) == 0 ? noLines : strlen2(input) ;
   char *tape = malloc(inputSize * expand);
   if (tape == NULL){
     free(file);
-    free(initial);
+    free(initial); // free *line?lol
     free(accept);
     free(reject);
+    // free tap, even not necessary... just for coherence
     return ERROR;
   }
 
@@ -309,6 +319,7 @@ error_code execute(char *machine_file, char *input) {
         tape[j] = currentT.write;
         switch (currentT.movement) {
           case -1: {
+            //bujidezainalixiguole 233
             if (j == 0) {
               free(initial);
               free(accept);
@@ -324,8 +335,10 @@ error_code execute(char *machine_file, char *input) {
         }
 
         if(strcmp(accept, current) == 0){
+          // free?
           return 1;
         } else if (strcmp(reject, current) == 0){
+          //free?
           return 0;
         }
       }
@@ -338,6 +351,7 @@ error_code execute(char *machine_file, char *input) {
           free(initial);
           free(accept);
           free(reject);
+          // more free may be needed
           return ERROR;
         }
 
@@ -355,6 +369,7 @@ error_code execute(char *machine_file, char *input) {
       free(initial);
       free(accept);
       free(reject);
+      //more free may be needed
       return ERROR;
     }
   }
