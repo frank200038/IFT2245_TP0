@@ -383,7 +383,7 @@ error_code execute(char *machine_file, char *input) {
       // If the tape is not long enough, start to reallocate
       if(j >= inputSize * expand){
         char *newTape = realloc(tape, inputSize * expand * 2 + 1);
-        expand *= 2;
+        expand *= 2; // Everytime when we reallocate, the tape will be twice bigger than previous
         if(newTape == NULL){
           free(tape);
           free(initial);
