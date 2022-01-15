@@ -178,8 +178,8 @@ transition *parse_line(char *line, size_t len) {
     i++;
   }
 
-  char *currentState = malloc(5);
-  char *nextState = malloc(5);
+  char *currentState = malloc(6);
+  char *nextState = malloc(6);
 
   if (currentState == NULL || nextState == NULL){
     free(t);
@@ -198,6 +198,7 @@ transition *parse_line(char *line, size_t len) {
     i++;
     current++;
   }
+  currentState[current] = "\0";
 
   i++;
   current = 0;
@@ -213,6 +214,7 @@ transition *parse_line(char *line, size_t len) {
     i++;
     current++;
   }
+  nextState[current] = "\0";
 
   i++;
 
@@ -231,8 +233,19 @@ transition *parse_line(char *line, size_t len) {
 
   return t;
 
+
 }
 
+void freeStates(transition trans[] , int limit){
+  if (limit < 5){
+    return;
+  }
+  for(int i = 0; i < limit-3; i++){
+    free(trans[i].current_state);
+    free(trans[i].next_state);
+  }
+
+}
 /**
  * Ex.6: Execute la machine de turing dont la description est fournie
  * @param machine_file le fichier de la description
@@ -251,31 +264,46 @@ error_code execute(char *machine_file, char *input) {
   transition transitions[noLines-3];
   char *initial, *accept, *reject;
   for(int i = 0; i< noLines; i++){
-    // necessary ? in addition it is never freed!!!!!
+    // n it is never freed!!!!!
     // free *line!
     char **line = malloc(sizeof (char *));
     if (line == NULL){
-      free(line);
       free(file);
+      freeStates(transitions,i);
       return ERROR;
     }
 
     int len = readline(file, line, 1024);
-    // check if len <0 !!!!!!!!!!!!!!!
+    // check if len <0. len < 0 means that sth goes wrong
+    // in function readline (may be other reason than file == NULL)
+    char *linePtr = *line;
+    free(line);
+    if (len < 0){
+      free(file);
+      free(linePtr);
+      freeStates(transitions,i);
+      return  ERROR;
+    }
     switch (i) {
-      case 0: initial = *line; break;
-      case 1: accept = *line; break;
-      case 2: reject = *line; break;
+      case 0: initial = linePtr;
+         break;
+      case 1: accept = linePtr;
+         break;
+      case 2: reject = linePtr;
+         break;
       default: {
-        transition *t = parse_line(*line, len);
+        transition *t = parse_line(linePtr, len);
+        free(linePtr);
         // t is never freed
         if(t == NULL){
-          free(line); //*line?
           free(file);
-          // free t?
+          // free t?(don't need I think)
+          freeStates(transitions,i);
           return ERROR;
         } else{
           transitions[i-3] = *t;
+          // free t immediately
+          free(t);
         }
       }
     }
@@ -291,10 +319,10 @@ error_code execute(char *machine_file, char *input) {
   char *tape = malloc(inputSize * expand);
   if (tape == NULL){
     free(file);
-    free(initial); // free *line?lol
-    free(accept);
-    free(reject);
-    // free tap, even not necessary... just for coherence
+    free(initial);
+    freeStates(transitions,noLines);
+//    free(accept);
+//    free(reject);
     return ERROR;
   }
 
@@ -319,12 +347,14 @@ error_code execute(char *machine_file, char *input) {
         tape[j] = currentT.write;
         switch (currentT.movement) {
           case -1: {
-            //bujidezainalixiguole 233
+            //bujidezainalixieguole 233
             if (j == 0) {
+              free(file);
               free(initial);
-              free(accept);
-              free(reject);
+//              free(accept);
+//              free(reject);
               free(tape);
+              freeStates(transitions,noLines);
               return ERROR;
             }
             else j--;
@@ -336,9 +366,11 @@ error_code execute(char *machine_file, char *input) {
 
         if(strcmp(accept, current) == 0){
           // free?
+          freeStates(transitions,noLines);
           return 1;
         } else if (strcmp(reject, current) == 0){
           //free?
+          freeStates(transitions,noLines);
           return 0;
         }
       }
@@ -347,11 +379,12 @@ error_code execute(char *machine_file, char *input) {
         char *newTape = realloc(tape, inputSize * expand * 2);
         expand *= 2;
         if(newTape == NULL){
-          free(tape);
+          free(tape);  // not necessary! because newtape = tape
           free(initial);
-          free(accept);
-          free(reject);
+//          free(accept);
+//          free(reject);
           // more free may be needed
+          freeStates(transitions,noLines);
           return ERROR;
         }
 
@@ -370,9 +403,11 @@ error_code execute(char *machine_file, char *input) {
       free(accept);
       free(reject);
       //more free may be needed
+      freeStates(transitions,noLines);
       return ERROR;
     }
   }
+
 }
 
 //243  file pointer
