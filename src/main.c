@@ -240,6 +240,16 @@ transition *parse_line(char *line, size_t len) {
  * @return le code d'erreur
  */
 error_code execute(char *machine_file, char *input) {
+
+//  243  file pointer
+//  256  line
+//  263  *line
+//  266-268 initial, accept, reject
+//  270  t
+//  290  tape
+//  346  new Tape 是否可以写成 char * tap = realloc(tape,inputSize....)
+//  360  newTape?
+
   FILE *file = fopen(machine_file, "r");
   // file free? assigned by malloc or...?
   if(file == NULL) return ERROR;
