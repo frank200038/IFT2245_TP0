@@ -168,7 +168,7 @@ error_code memcpy2(void *dest, void *src, size_t len) {
 transition *parse_line(char *line, size_t len) {
   transition *t = malloc(sizeof(transition));
 
-  char *lineParse = malloc(len);
+  char *lineParse = malloc(len+1);
 
   if (lineParse == NULL){
     free(t);
@@ -177,13 +177,14 @@ transition *parse_line(char *line, size_t len) {
 
 
   int i = 0;
-  while(line[i] != '\0'){
-    lineParse[i] = line[i];
-    i++;
-  }
+//  while(line[i] != '\0'){
+//    lineParse[i] = line[i];
+//    i++;
+//  }
+  memcpy2(lineParse,line,len);
 
-  char *currentState = malloc(5);
-  char *nextState = malloc(5);
+  char *currentState = malloc(6);
+  char *nextState = malloc(6);
 
   if (currentState == NULL || nextState == NULL){
     free(t);
@@ -202,7 +203,7 @@ transition *parse_line(char *line, size_t len) {
     i++;
     current++;
   }
-
+  currentState[current] = '\0';
 
   i++;
   current = 0;
@@ -219,6 +220,7 @@ transition *parse_line(char *line, size_t len) {
     current++;
   }
 
+  nextState[current] = '\0';
 
   i++;
 
@@ -258,16 +260,18 @@ error_code execute(char *machine_file, char *input) {
   FILE *file = fopen(machine_file, "r");
   if(file == NULL) return ERROR;
 
-  // do not have to check nolines <0 because
-  // it <0 iff file == NULL which we have already checked...
   int noLines = no_of_lines(file);
+  if (noLines <= 3) {
+    fclose(file);
+    return ERROR;
+  }
 
   transition transitions[noLines-3];
   char *initial, *accept, *reject;
   for(int i = 0; i< noLines; i++){
     char **line = malloc(sizeof (char *));
     if (line == NULL){
-      free(file);
+      fclose(file);
       freeStates(transitions,i);
       return ERROR;
     }
@@ -279,7 +283,7 @@ error_code execute(char *machine_file, char *input) {
     // check if len <0. len < 0 means that sth goes wrong
     // in function readline
     if (len < 0){
-      free(file);
+      fclose(file);
       free(linePtr);
       freeStates(transitions,i);
       return  ERROR;
@@ -297,7 +301,7 @@ error_code execute(char *machine_file, char *input) {
         free(linePtr);
         // t is never freed
         if(t == NULL){
-          free(file);
+          fclose(file);
           freeStates(transitions,i);
           return ERROR;
         } else{
@@ -319,7 +323,7 @@ error_code execute(char *machine_file, char *input) {
   int inputSize = strlen2(input) == 0 ? noLines : strlen2(input) ;
   char *tape = malloc(inputSize * expand + 1); // Allocate one extra space to accomodate '\0'
   if (tape == NULL){
-    free(file);
+    fclose(file);
     free(initial);
     freeStates(transitions,noLines);
     free(accept);
@@ -335,6 +339,7 @@ error_code execute(char *machine_file, char *input) {
         tape[i] = ' ';
     }
   }
+
 
   memcpy2(tape, input, strlen2(input));
 
@@ -356,7 +361,7 @@ error_code execute(char *machine_file, char *input) {
 
             // Can't move left when we are at the beginning. Means something is wrong.
             if (j == 0) {
-              free(file);
+              fclose(file);
               free(initial);
               free(accept);
               free(reject);
@@ -372,10 +377,20 @@ error_code execute(char *machine_file, char *input) {
         }
 
         if(strcmp(accept, current) == 0){
+          fclose(file);
+          free(accept);
+          free(reject);
+          free(initial);
+          free(tape);
           freeStates(transitions,noLines);
           return 1;
         } else if (strcmp(reject, current) == 0){
           freeStates(transitions,noLines);
+          fclose(file);
+          free(accept);
+          free(reject);
+          free(initial);
+          free(tape);
           return 0;
         }
       }
