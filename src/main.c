@@ -108,8 +108,8 @@ error_code readline(FILE *fp, char **out, size_t max_len) {
     return ERROR;
   } else{
     int current = fgetc(fp);
-    int index = 0;
-    int length = 0;
+    int index = 0; // Current index of output.
+    int length = 0; // Count non null characters
 
     while(current != EOF && index < max_len + 1){
 
@@ -166,8 +166,10 @@ error_code memcpy2(void *dest, void *src, size_t len) {
  * @return la transition ou NULL en cas d'erreur
  */
 transition *parse_line(char *line, size_t len) {
+
   transition *t = malloc(sizeof(transition));
 
+  // Accommodate the final \0 symbol.
   char *lineParse = malloc(len+1);
 
   if (lineParse == NULL){
@@ -177,12 +179,9 @@ transition *parse_line(char *line, size_t len) {
 
 
   int i = 0;
-//  while(line[i] != '\0'){
-//    lineParse[i] = line[i];
-//    i++;
-//  }
   memcpy2(lineParse,line,len);
 
+  // Accommodate the final \0 symbol
   char *currentState = malloc(6);
   char *nextState = malloc(6);
 
@@ -194,6 +193,8 @@ transition *parse_line(char *line, size_t len) {
     return NULL;
   }
 
+  // Because the format of each transition is fixed, we can move the index easily.
+
   i=1; // initial value of i is 1 because we ignore the "("
   int current = 0;
 
@@ -203,6 +204,7 @@ transition *parse_line(char *line, size_t len) {
     i++;
     current++;
   }
+
   currentState[current] = '\0';
 
   i++;
@@ -228,6 +230,7 @@ transition *parse_line(char *line, size_t len) {
   t->write = lineParse[i];
 
   i+=2; // skip ","
+
   switch (lineParse[i]) {
     case 'G': t->movement = -1; break;
     case 'R': t->movement = 0; break;
@@ -261,15 +264,13 @@ error_code execute(char *machine_file, char *input) {
   if(file == NULL) return ERROR;
 
   int noLines = no_of_lines(file);
-  if (noLines <= 3) {
-    fclose(file);
-    return ERROR;
-  }
 
   transition transitions[noLines-3];
   char *initial, *accept, *reject;
+
   for(int i = 0; i< noLines; i++){
     char **line = malloc(sizeof (char *));
+
     if (line == NULL){
       fclose(file);
       freeStates(transitions,i);
@@ -299,7 +300,8 @@ error_code execute(char *machine_file, char *input) {
       default: {
         transition *t = parse_line(linePtr, len);
         free(linePtr);
-        // t is never freed
+
+
         if(t == NULL){
           fclose(file);
           freeStates(transitions,i);
@@ -321,7 +323,7 @@ error_code execute(char *machine_file, char *input) {
   // If the input is 0, choose the noLines as the size to allocate to the tape
   // Can't allocate 0 size. (Inspired by the "test_execute_2" which has an input an empty string)
   int inputSize = strlen2(input) == 0 ? noLines : strlen2(input) ;
-  char *tape = malloc(inputSize * expand + 1); // Allocate one extra space to accomodate '\0'
+  char *tape = malloc(inputSize * expand + 1); // Allocate one extra space to accommodate '\0'
   if (tape == NULL){
     fclose(file);
     free(initial);
@@ -340,7 +342,6 @@ error_code execute(char *machine_file, char *input) {
     }
   }
 
-
   memcpy2(tape, input, strlen2(input));
 
   int j = 0;
@@ -356,9 +357,9 @@ error_code execute(char *machine_file, char *input) {
         found = 1;
         current = currentT.next_state;
         tape[j] = currentT.write;
+
         switch (currentT.movement) {
           case -1: {
-
             // Can't move left when we are at the beginning. Means something is wrong.
             if (j == 0) {
               fclose(file);
@@ -393,6 +394,7 @@ error_code execute(char *machine_file, char *input) {
           free(tape);
           return 0;
         }
+
       }
 
       // If the tape is not long enough, start to reallocate
@@ -447,12 +449,22 @@ int main() {
 
   errno = 0;
 
-  printf("%d\n",execute("../youre_gonna_go_far_kid", "STARING AT THE SUN")); // -1
-  printf("%d\n",execute("../this_file_dne", "101010")); // -1
-  printf("%d\n",execute("../youre_gonna_go_far_kid", "")); // 1
-  printf("%d\n",execute("../has_five_ones", "0000")); // 0
-  printf("%d\n",execute("../has_five_ones", "101010101")); // 1
-  printf("%d\n",execute("../has_five_ones", "111111111")); // 1
+//  printf("%d\n",execute("../youre_gonna_go_far_kid", "STARING AT THE SUN")); // -1
+//  printf("%d\n",execute("../this_file_dne", "101010")); // -1
+//  printf("%d\n",execute("../youre_gonna_go_far_kid", "")); // 1
+//  printf("%d\n",execute("../has_five_ones", "0000")); // 0
+//  printf("%d\n",execute("../has_five_ones", "101010101")); // 1
+//  printf("%d\n",execute("../has_five_ones", "111111111")); // 1
+//  printf("%d\n",execute("../power_len.txt", "1111")); // 1
+
+//    printf("%d\n",execute("../power_len.txt", "11111")); // 0
+//    printf("%d\n",execute("../power_len.txt", "1010")); // 1
+//    printf("%d\n",execute("../power_len.txt", "10101010")); // 1
+//    printf("%d\n",execute("../power_len.txt", "101010101010")); // 0
+//    printf("%d\n",execute("../power_len.txt", "000000000000")); // 0
+//    printf("%d\n",execute("../power_len.txt", "0000000000000000")); // 1
+//    printf("%d\n",execute("../power_len.txt", "1010")); // 1
+//    printf("%d\n",execute("../power_len.txt", "ahkjsdfkjhdsfkhj")); // -1
   //printf("%d\n",execute("../has_five_ones", "1111"));
   return 0;
 }
